@@ -1,0 +1,3 @@
+
+class EnvNotLoadedOrTokenNotFound(Exception):
+    pass

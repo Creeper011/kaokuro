@@ -1,0 +1,5 @@
+.env
+config.yml
+googleindentify.json
+.venv/
+__pycache__/
