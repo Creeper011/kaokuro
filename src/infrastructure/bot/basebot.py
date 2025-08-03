@@ -2,9 +2,11 @@ import os
 import discord
 import logging
 from discord.ext import commands
+from discord.gateway import DiscordWebSocket
 from src.config.settings import SettingsManager
 from src.exceptions.bot.basebot_exceptions import *
 from src.infrastructure.bot.load_extensions import ExtensionLoader
+from src.infrastructure.bot.utils.path_indentify import identify
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,7 @@ class Bot(commands.AutoShardedBot):
         self.intents_config = self.settings.get_section({"Bot": "intents"})
         self.prefix = self.settings.get({"Bot": "prefix"})
         intents = discord.Intents(**self.intents_config)
+        DiscordWebSocket.identify = identify
         super().__init__(command_prefix=self.prefix, intents=intents)
 
     async def on_ready(self):
