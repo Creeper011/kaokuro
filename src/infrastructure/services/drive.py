@@ -50,7 +50,7 @@ class Drive():
                     self.drive = self.loginToDrive() # Create another session
                     time.sleep(2)
                 else:
-                    raise
+                    raise e
 
     def uploadFolder(self, path):
         """Upload all files in a folder to Google Drive and return the folder link.

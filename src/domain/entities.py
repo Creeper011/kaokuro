@@ -1,5 +1,9 @@
+from dataclasses import dataclass
+from typing import Optional
 
-class Download:
-    url: str
-    format: str
-    
+@dataclass
+class DownloadResult:
+    filepath: Optional[str] = None
+    link: Optional[str] = None
+    file_size: Optional[int] = None
+    elapsed: Optional[float] = None

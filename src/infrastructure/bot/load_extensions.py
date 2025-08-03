@@ -29,13 +29,11 @@ class ExtensionLoader():
         return None
     
     async def load_extensions(self):
-        """Load all extensions from the configured path.
-        """
-
+        """Load all extensions from the configured path."""
         for root, dirs, files in os.walk(self.root_path):
-            logger.info(files)
             for file in files:
                 if file.endswith('.py'):
+                    logger.debug(f"Loading files: {files}")
                     rel_path = os.path.relpath(os.path.join(root, file), self.root_path) 
                     mod_path = os.path.splitext(rel_path.replace(os.sep, "."))[0]    
                     cog_path = f"{self.extensions_path}.{mod_path}"                     

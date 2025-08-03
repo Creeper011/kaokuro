@@ -8,7 +8,7 @@ from src.infrastructure.bot.load_extensions import ExtensionLoader
 
 logger = logging.getLogger(__name__)
 
-class Bot(commands.Bot):
+class Bot(commands.AutoShardedBot):
     def __init__(self, reconnect: bool = True):
         self.settings = SettingsManager()
         self.reconnect = reconnect
@@ -19,7 +19,7 @@ class Bot(commands.Bot):
 
     async def on_ready(self):
         logger.info(f"{self.user} loaded")
-        # load extensions
+        await ExtensionLoader(super()).load_extensions()
 
     def run(self):
         token = os.getenv("TOKEN")
