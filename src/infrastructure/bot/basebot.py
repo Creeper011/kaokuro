@@ -24,6 +24,8 @@ class Bot(commands.AutoShardedBot):
         logger.info(f"{self.user} loaded")
         await ExtensionLoader(super()).load_extensions()
         await self.tree.sync()
+        await self.change_presence(activity=discord.CustomActivity(name='eating cakes' , 
+            emoji=discord.PartialEmoji(name="🍰")))
         logger.info(f"commands synced")
 
     def run(self):

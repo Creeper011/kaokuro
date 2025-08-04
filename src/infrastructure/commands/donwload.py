@@ -4,10 +4,8 @@ import validators
 import os
 from discord.ext import commands
 from discord import app_commands
-from src.domain.usecases.downloadService import DownloaderService
+from src.domain.usecases.download_service import DownloaderService
 from src.infrastructure.bot.utils.error_embed import create_error, ErrorTypes
-from src.domain.entities import DownloadResult
-from src.infrastructure.constants.result import Result
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +35,7 @@ class DownloadCog(commands.Cog):
         if isinstance(format, app_commands.Choice):
             format = format.value
         
+        downloader_service = None
         try:
             downloader_service = DownloaderService(url, format, cancel_at_seconds=240)
             download_result, result = await downloader_service.download()
@@ -66,12 +65,16 @@ class DownloadCog(commands.Cog):
                             content=f"Download completed! {download_result.elapsed:.2f} seconds elapsed, {file_size / (1024 * 1024):.2f}MB.", 
                             attachments=[file]
                         )
+                        # Limpar arquivo após envio bem-sucedido
+                        await downloader_service.cleanup_after_send(download_result.filepath)
                     except Exception as e:
                         logger.error(f"Error sending file: {e}")
                         await interaction.followup.send(
                             f"Download completed! {download_result.elapsed:.2f} seconds elapsed, {file_size / (1024 * 1024):.2f}MB.", 
                             file=file
                         )
+                        # Limpar arquivo mesmo em caso de erro no envio
+                        await downloader_service.cleanup_after_send(download_result.filepath)
                 
                 # Handle drive link (large files)
                 elif download_result.link:
@@ -91,6 +94,11 @@ class DownloadCog(commands.Cog):
             logger.error(f"Download error: {error}")
             await interaction.followup.send(embed=create_error(error="Download failed", code=str(error), 
                                                                type=ErrorTypes.UNKNOWN))
+            if downloader_service:
+                await downloader_service._cleanup_temp_files()
+        finally:
+            if downloader_service:
+                await downloader_service.schedule_cleanup(5)
 
 async def setup(bot: commands.Bot):
     """Load the Download cog."""

@@ -4,6 +4,7 @@ import time
 import asyncio
 import os
 import uuid
+import logging
 import shutil
 from pathlib import Path
 from pydub import AudioSegment
@@ -12,6 +13,8 @@ from mutagen.id3 import ID3
 from mutagen.mp3 import MP3
 from src.domain.entities import SpeedAudioResult
 from src.infrastructure.services.drive import Drive
+
+logger = logging.getLogger(__name__)
 
 class SpeedControlAudio():
     def __init__(self):
@@ -35,10 +38,10 @@ class SpeedControlAudio():
             if temp_dir.exists():
                 shutil.rmtree(temp_dir)
         except Exception as e:
-            print(f"Error cleaning up temporary files: {e}")
+            logger.error(f"Error cleaning up temporary files: {e}")
 
     def _preserve_metadata(self, original_path: Path, output_path: Path):
-        """Preserva os metadados ID3 do arquivo original para o arquivo de saída usando mutagen.MP3"""
+        """Preserves ID3 metadata from the original file to the output file using mutagen.MP3"""
         try:
             original = MP3(original_path)
             output = MP3(output_path)
@@ -48,7 +51,63 @@ class SpeedControlAudio():
         except Exception as e:
             pass
 
-    def change_speed(self, factor: float, preserve_pitch: bool, filepath: Path) -> SpeedAudioResult:
+    def _change_speed_sync(self, factor: float, preserve_pitch: bool, filepath: Path) -> SpeedAudioResult:
+        """Synchronous version of audio processing"""
+        if not filepath.exists():
+            raise FileNotFoundError("File not exists")
+
+        start = time.time()
+        temp_dir = None
+
+        try:
+            base_name = filepath.name
+            filename = f"{factor}x - {base_name}"
+            output_path = filepath.parent / filename
+            
+            if preserve_pitch:
+                y, sr = librosa.load(filepath, sr=None)
+                y_stretched = librosa.effects.time_stretch(y, rate=factor)
+                
+                soundfile.write(output_path, y_stretched, sr, format='MP3')
+                
+                self._preserve_metadata(filepath, output_path)
+            else:
+                audio = AudioSegment.from_file(filepath)
+                new_audio = audio._spawn(
+                    audio.raw_data, 
+                    overrides={"frame_rate": int(audio.frame_rate * factor)}
+                )
+                new_audio = new_audio.set_frame_rate(audio.frame_rate)
+                new_audio.export(output_path, format="mp3")
+                
+                self._preserve_metadata(filepath, output_path)
+
+            elapsed = time.time() - start
+            
+            # Check file size
+            file_size = os.path.getsize(output_path)
+            drive_link = None
+            
+            # For the synchronous version, we don't upload to Drive here
+            # The upload will be done asynchronously by the change_speed method
+            
+            result = SpeedAudioResult(
+                factor=factor, 
+                filepath=output_path, 
+                elapsed=elapsed,
+                file_size=file_size,
+                drive_link=drive_link
+            )
+            return result
+
+        except Exception as e:
+            # Clean up on error
+            if temp_dir and temp_dir.exists():
+                self._cleanup_temp_dir(temp_dir)
+            raise e
+
+    async def change_speed(self, factor: float, preserve_pitch: bool, filepath: Path) -> SpeedAudioResult:
+        """Async version of audio processing"""
         if not filepath.exists():
             raise FileNotFoundError("File not exists")
 
@@ -86,11 +145,19 @@ class SpeedControlAudio():
             
             if file_size > self.FILE_SIZE_LIMIT:
                 # Upload to Drive if file is too large
-                drive_link = self.drive.uploadToDrive(output_path)
-                # Clean up local file after upload
-                if output_path.exists():
-                    output_path.unlink()
-                output_path = None
+                try:
+                    logger.debug(f"File size ({file_size} bytes) exceeds limit ({self.FILE_SIZE_LIMIT} bytes). Uploading to Drive...")
+                    drive_link = await self.drive.uploadToDrive(output_path)
+                    logger.debug(f"Successfully uploaded to Drive: {drive_link}")
+                    # Clean up local file after upload
+                    if output_path.exists():
+                        output_path.unlink()
+                        logger.debug(f"Cleaned up local file: {output_path}")
+                    output_path = None
+                except Exception as e:
+                    logger.error(f"Failed to upload to Drive: {e}")
+                    # Keep the local file if Drive upload fails
+                    drive_link = None
             
             result = SpeedAudioResult(
                 factor=factor, 
@@ -112,13 +179,13 @@ class SpeedControlAudio():
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None, 
-            self.change_speed, 
+            self._change_speed_sync, 
             factor, 
             preserve_pitch, 
             filepath
         )
 
-    def process_with_temp_dir(self, factor: float, preserve_pitch: bool, input_path: Path) -> SpeedAudioResult:
+    async def process_with_temp_dir(self, factor: float, preserve_pitch: bool, input_path: Path) -> SpeedAudioResult:
         """Process audio with temporary directory management"""
         temp_dir = self._create_temp_dir()
         
@@ -128,7 +195,7 @@ class SpeedControlAudio():
             shutil.copy2(input_path, temp_input_path)
             
             # Process the audio
-            result = self.change_speed(factor, preserve_pitch, temp_input_path)
+            result = await self.change_speed(factor, preserve_pitch, temp_input_path)
             
             # If result has a filepath, move it to temp_dir for cleanup
             if result.filepath and result.filepath.exists():

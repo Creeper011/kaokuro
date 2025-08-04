@@ -1,7 +1,5 @@
 import logging
 import sys
-from discord.ext import commands
-from discord.gateway import DiscordWebSocket
 
 logger = logging.getLogger(__name__)
 
