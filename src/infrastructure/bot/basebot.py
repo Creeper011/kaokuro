@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.gateway import DiscordWebSocket
 from src.config import SettingsManager
 from src.exceptions.bot.basebot_exceptions import *
-from src.infrastructure.bot import ExtensionLoader
+from src.infrastructure.bot.load_extensions import ExtensionLoader
 from src.infrastructure.bot.utils import identify
 
 logger = logging.getLogger(__name__)
