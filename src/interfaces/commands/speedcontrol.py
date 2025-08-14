@@ -21,6 +21,8 @@ class SpeedControlCog(commands.Cog):
         preserve_pitch="Set to True to keep the original pitch, or False to change pitch with speed",
         attachment="The media file to process",
         invisible="If True, only you will see the result (ephemeral message)")
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def speed(self, interaction: discord.Interaction, factor: app_commands.Range[float, 0.1, 2.0], attachment: discord.Attachment, preserve_pitch: bool = False, invisible: bool = False):
         await interaction.response.defer(ephemeral=invisible)
 

@@ -27,6 +27,8 @@ class DownloadCog(commands.Cog):
     )
     @app_commands.describe(url="A query or a url (Playlist not supported)",  format="The format to download", 
         invisible="If True, only you will see the result (ephemeral message)")
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def download(self, interaction: discord.Interaction, url: str, format: app_commands.Choice[str] = "mp4", invisible: bool = False):
         await interaction.response.defer(ephemeral=invisible)
 

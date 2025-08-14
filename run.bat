@@ -39,7 +39,7 @@ echo ========================================
 echo.
 
 REM Run the bot (using virtual environment Python)
-python main.py --debug
+python main.py
 
 echo.
 echo Bot stopped.
