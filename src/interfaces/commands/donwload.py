@@ -1,16 +1,22 @@
 import asyncio
 import logging
-from typing import Optional
 import discord
-import validators
 import os
 from pathlib import Path
 from discord.ext import commands
 from discord import app_commands
-from src.domain.usecases.download import DownloadUsecase
+from src.domain.usecases.download_usecase import DownloadUsecase
 from src.domain.entities.download_entity import DownloadResult
 from src.application.utils.error_embed import create_error
 from src.application.constants import ErrorTypes
+from src.domain.exceptions.download_exceptions import (
+    MediaFilepathNotFound,
+    FailedToUploadDrive,
+    InvalidUrl,
+    InvalidFormat,
+    InvalidSpeed,
+    GenericError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -97,16 +103,24 @@ class DownloadCog(commands.Cog):
                         content=f"Download Completed! Elapsed: {elapsed}\nLink: {download_result.drive_link}"
                     )
 
-
+        except (InvalidUrl, InvalidFormat, InvalidSpeed) as error:
+            logger.error(f"Invalid input during download: {error}")
+            await interaction.followup.send(embed=create_error(error=str(error), type=ErrorTypes.INVALID_INPUT))
+        except MediaFilepathNotFound as error:
+            logger.error(f"Media file not found after download: {error}")
+            await interaction.followup.send(embed=create_error(error="Could not find the media file after download.", type=ErrorTypes.FILE_NOT_FOUND))
+        except FailedToUploadDrive as error:
+            logger.error(f"Failed to upload to drive: {error}")
+            await interaction.followup.send(embed=create_error(error="The file was too large and failed to upload to cloud storage.", type=ErrorTypes.FILE_TOO_LARGE))
+        except GenericError as error:
+            logger.error(f"A generic error occurred during download: {error}")
+            await interaction.followup.send(embed=create_error(error="An unexpected error occurred.", type=ErrorTypes.UNKNOWN, code=str(error)))
         except Exception as error:
-            logger.error(f"Error occurred while downloading: {error}")
-            await interaction.followup.send(embed=create_error(error="An error occurred while downloading the media.", type=ErrorTypes.UNKNOWN, code=str(error)))
-            await asyncio.sleep(5)
-            usecase._cleanup()
-            return
+            logger.error(f"An unknown error occurred while downloading: {error}", exc_info=True)
+            await interaction.followup.send(embed=create_error(error="An unknown error occurred while processing your request.", type=ErrorTypes.UNKNOWN, code=str(error)))
         
         finally:
-            await asyncio.sleep(1)  # Give some time for the file to be sent
+            await asyncio.sleep(1)
             usecase._cleanup()
 
 async def setup(bot: commands.Bot):

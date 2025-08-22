@@ -87,7 +87,7 @@ class DownloadUsecase:
 
         file_path, temp_dir, session_id, is_audio = await self._download_async(url, format, quality if quality else None)
 
-        self.session_id = session_id  
+        self.session_id = session_id
 
         if not file_path or not os.path.exists(file_path):
             raise MediaFilepathNotFound(f"Downloaded file not found: {file_path}")
@@ -97,10 +97,6 @@ class DownloadUsecase:
         if speed is not None:
             self.cleanup_speed_included = True
             result: SpeedMediaResult = await self.speedmedia_service.change_speed(file_path, speed, preserve_pitch, not_upload_to_drive=True)
-            
-            if result.exception:
-                logger.error(f"Error changing speed: {result.exception}")
-                raise result.exception
 
             if result.file_path and os.path.getsize(result.file_path) > self.max_file_size:
                 try:
