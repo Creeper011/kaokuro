@@ -8,8 +8,8 @@ import logging
 from src.domain.usecases.speedmedia import SpeedMedia, SpeedMediaResult
 from src.domain.entities.download_entity import DownloadResult
 from src.domain.exceptions.download_exceptions import MediaFilepathNotFound, FailedToUploadDrive
-from src.infrastructure.services.downloader import Downloader
-from src.infrastructure.services.drive import Drive
+from src.infrastructure.services import Downloader
+from src.infrastructure.services import DriveLoader
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class DownloadUsecase:
         self.cleanup_temp_dir = self.config["temp_dir"]
         self.cleanup_speed_included = False  
         self.session_id: str | None = None 
-        self.drive = Drive("")
+        self.drive = DriveLoader().get_drive()
         self.max_file_size = 1024 * 1024 * 100
 
         logger.debug("Initialized DownloadUsecase")
@@ -117,16 +117,24 @@ class DownloadUsecase:
                 is_audio=is_audio
             )
         else:
-            if file_path and os.path.getsize(file_path) > self.speedmedia_service.max_file_size:
+            if file_path and os.path.getsize(file_path) > self.max_file_size:
                 try:
-                    drive_path = await self.speedmedia_service.drive.uploadToDrive(file_path)
+                    drive_path = await self.drive.uploadToDrive(file_path)
                     logger.debug(f"Large file uploaded to Drive: {drive_path}")
                 except Exception as e:
                     logger.error(f"Failed to upload to Drive: {e}")
                     raise FailedToUploadDrive(f"Failed to upload {file_path} to Drive: {e}")
 
         elapsed = time() - start
-        return DownloadResult(file_path=file_path, drive_link=drive_path, elapsed=elapsed, download_path=temp_dir, resolution=self.get_resolution(file_path), frame_rate=self.get_frame_rate(file_path))
+        return DownloadResult(
+            file_path=file_path if not drive_path else None,
+            drive_link=drive_path,
+            elapsed=elapsed, 
+            download_path=temp_dir, 
+            resolution=self.get_resolution(file_path), 
+            frame_rate=self.get_frame_rate(file_path),
+            is_audio=is_audio
+        )
 
     async def _download_async(self, url: str, format: str, quality: str = None) -> str:
         """Perform the actual download and return the downloaded file path + session_id"""

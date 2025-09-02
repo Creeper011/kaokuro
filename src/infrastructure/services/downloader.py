@@ -60,6 +60,8 @@ class Downloader:
             else:
                 target_dict[key] = value
 
+
+
     async def __aenter__(self):
         self.loop = asyncio.get_event_loop()
         self._download_task = self.loop.run_in_executor(None, self._download)
@@ -172,7 +174,7 @@ class Downloader:
                         logger.debug(f"Expected filename: {filename}")
             except Exception as error:
                 logger.error(f"Download failed completely: {error}")
-                return None, self.temp_dir, self.session_id
+                return None#, self.temp_dir, self.session_id
         if self.is_url_stream:
             return None
         downloaded_file = self._resolve_downloaded_file()
@@ -237,3 +239,4 @@ class Downloader:
     def get_stream_url(self):
         """Returns the stream URL if is_url_stream is True."""
         return self.stream_url
+

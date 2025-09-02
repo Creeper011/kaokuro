@@ -14,7 +14,7 @@ from mutagen.flac import FLAC
 from src.domain.entities.speedmedia_entity import SpeedMediaResult
 from src.domain.exceptions.speedmedia_exceptions import GenericError, FailedToUploadDrive, InvalidFileType
 from src.infrastructure.services.speed import VideoSpeedService, AudioSpeedService
-from src.infrastructure.services.drive import Drive
+from src.infrastructure.services import DriveLoader
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class SpeedMedia:
     def __init__(self):
         self.audio_service = AudioSpeedService()
         self.video_service = VideoSpeedService()
-        self.drive = Drive("")
+        self.drive = DriveLoader().get_drive()
         self.session_id = str(uuid.uuid4())
         self.temp_dir = Path("temp/speed_control")
         self.max_file_size = 120 * 1024 * 1024

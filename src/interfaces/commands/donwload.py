@@ -64,20 +64,34 @@ class DownloadCog(commands.Cog):
         usecase = DownloadUsecase()
 
         try:
+            logger.debug(f"Starting download: {url}, Format: {format}, Quality: {quality}, Speed: {speed}, Preserve Pitch: {preserve_pitch}")
             download_result: DownloadResult = await usecase.download(url, format, speed, preserve_pitch, quality)
 
-            if download_result.file_path and not download_result.drive_link:
+            if download_result.drive_link:
+                logger.debug(f"File uploaded to Drive successfully: {download_result.drive_link}")
+                elapsed = f"{download_result.elapsed:.2f}s"
+                if download_result.speed_elapsed:
+                    speed_elapsed = f"{download_result.speed_elapsed:.2f}s"
+                    await interaction.followup.send(
+                        content=f"Download Completed! Elapsed: {elapsed}, Speed Elapsed: {speed_elapsed}\nLink: {download_result.drive_link}"
+                    )
+                else:
+                    await interaction.followup.send(
+                        content=f"Download Completed! Elapsed: {elapsed}\nLink: {download_result.drive_link}"
+                    )
+            else:
+
                 logger.debug(f"File downloaded successfully: {download_result.file_path}")
                 path = Path(os.path.relpath(download_result.file_path))
                 file = discord.File(path, filename=path.name)
 
-                logger.debug(f"File converted to: {file.uri} | {file.filename}")
                 await interaction.followup.send("Sending file...")
 
                 elapsed = f"{download_result.elapsed:.2f}s"
                 filesize = f"{os.path.getsize(download_result.file_path) / (1024*1024):.2f}MB"
 
                 video_message = f"Resolution: {download_result.resolution}, Frame Rate: {download_result.frame_rate:.2f}fps"
+                
                 if download_result.speed_elapsed:
                     speed_elapsed = f"{download_result.speed_elapsed:.2f}s"
                     await interaction.edit_original_response(
@@ -88,19 +102,6 @@ class DownloadCog(commands.Cog):
                     await interaction.edit_original_response(
                         content=f"Download Completed! Elapsed: {elapsed}, Filesize: {filesize}\n{video_message if not download_result.is_audio else ''}",
                         attachments=[file]
-                    )
-
-            elif download_result.drive_link and not download_result.file_path:
-                elapsed = f"{download_result.elapsed:.2f}s"
-
-                if download_result.speed_elapsed:
-                    speed_elapsed = f"{download_result.speed_elapsed:.2f}s"
-                    await interaction.followup.send(
-                        content=f"Download Completed! Elapsed: {elapsed}, Speed Elapsed: {speed_elapsed}\nLink: {download_result.drive_link}"
-                    )
-                else:
-                    await interaction.followup.send(
-                        content=f"Download Completed! Elapsed: {elapsed}\nLink: {download_result.drive_link}"
                     )
 
         except (InvalidUrl, InvalidFormat, InvalidSpeed) as error:

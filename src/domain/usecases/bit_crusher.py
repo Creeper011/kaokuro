@@ -7,9 +7,9 @@ import logging
 import time
 import discord
 from pathlib import Path
-from src.infrastructure.services.bitcrusher import AudioCrusher
-from src.infrastructure.services.drive import Drive
-from src.domain.entities.bitcrusher_entity import BitCrushResult
+from src.infrastructure.services import AudioCrusher
+from src.infrastructure.services import DriveLoader
+from src.domain.entities import BitCrushResult
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class BitCrusherUsecase:
         self.max_media_size = max_media_size
         self.temp_dir = Path("temp/bit_crusher")
         self.session_id = str(uuid.uuid4())
-        self.drive = Drive("")
+        self.drive = DriveLoader().get_drive()
 
     def _cleanup(self) -> bool:
         try:
@@ -75,7 +75,7 @@ class BitCrusherUsecase:
 
         drive_link = None
         if output_path.stat().st_size > self.max_media_size:
-            drive_link = self.drive.uploadToDrive(output_path)
+            drive_link = await self.drive.uploadToDrive(output_path)
 
         return BitCrushResult(
             file_path=str(output_path),
