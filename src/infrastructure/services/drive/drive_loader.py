@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
-from src.infrastructure.services.drive import Drive
-from src.infrastructure.services.base_drive_loader import BaseDriveLoader
+from src.infrastructure.services.drive.drive import Drive
+from src.infrastructure.services.drive.base_drive_loader import BaseDriveLoader
 from src.application.config import SettingsManager
 
 logger = logging.getLogger(__name__)

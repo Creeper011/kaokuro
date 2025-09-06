@@ -5,24 +5,16 @@ import os
 from pathlib import Path
 from discord.ext import commands
 from discord import app_commands
-from src.domain.usecases.download_usecase import DownloadUsecase
-from src.domain.entities.download_entity import DownloadResult
+from src.application.builderman import BuilderMan
 from src.application.utils.error_embed import create_error
 from src.application.constants import ErrorTypes
-from src.domain.exceptions.download_exceptions import (
-    MediaFilepathNotFound,
-    FailedToUploadDrive,
-    InvalidUrl,
-    InvalidFormat,
-    InvalidSpeed,
-    GenericError
-)
 
 logger = logging.getLogger(__name__)
 
 class DownloadCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.builder = BuilderMan()
 
     @app_commands.command(name="download", description="Download from multiple sites")
     @app_commands.choices(
@@ -61,11 +53,11 @@ class DownloadCog(commands.Cog):
         if isinstance(quality, app_commands.Choice):
             quality = quality.value
 
-        usecase = DownloadUsecase()
+        usecase = self.builder.build_download_usecase()
 
         try:
             logger.debug(f"Starting download: {url}, Format: {format}, Quality: {quality}, Speed: {speed}, Preserve Pitch: {preserve_pitch}")
-            download_result: DownloadResult = await usecase.download(url, format, speed, preserve_pitch, quality)
+            download_result = await usecase.download(url, format, speed, preserve_pitch, quality)
 
             if download_result.drive_link:
                 logger.debug(f"File uploaded to Drive successfully: {download_result.drive_link}")

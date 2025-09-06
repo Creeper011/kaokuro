@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from src.infrastructure.services.drive_loader import DriveLoader
+from src.infrastructure.services.drive.drive_loader import DriveLoader
 from src.application.utils.error_embed import create_error
 from src.application.constants import ErrorTypes
 

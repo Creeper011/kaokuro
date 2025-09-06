@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from src.infrastructure.services.drive import Drive
+from src.infrastructure.services.drive.drive import Drive
 
 class BaseDriveLoader(ABC):
     """Abstract interface for Drive dependency loader"""
