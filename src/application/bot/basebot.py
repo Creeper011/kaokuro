@@ -1,8 +1,7 @@
-import discord
-from discord.ext import commands
-from src.application.bot.load_extensions import ExtensionLoader
 import os
 import logging
+from discord.ext import commands
+from src.application.bot.events.on_ready_event import OnReadyEvent
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +15,8 @@ class Bot(commands.AutoShardedBot):
         self.reconnect = reconnect
 
     async def on_ready(self):
-        logger.info(f"{self.user} loaded")
-        await ExtensionLoader(super()).load_extensions()
-        await self.tree.sync()        
-        logger.debug(f"Status customization applied: Status: {self.status_presence.name}, Mobile: {self.mobile_identify}, Name: `{self.custom_status_name}")
-        await self.change_presence(
-            activity=discord.CustomActivity(name=self.custom_status_name, emoji=discord.PartialEmoji(name="🍰")),
-            status=self.status_presence)
-        logger.info(f"commands synced")
+        """Handle bot ready event handler."""
+        await OnReadyEvent(self).handle_on_ready()
 
     def run(self):
         token = os.getenv("TOKEN")
