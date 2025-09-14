@@ -16,7 +16,7 @@ class DownloadOrchestrator:
     based on a custom file size limit.
     """
 
-    def __init__(self, url: str, format: str, quality: Optional[str] = None, min_size_for_drive_upload: Optional[int] = 120 * 1024 * 1024):
+    def __init__(self, url: str, format: str, quality: Optional[str] = None, min_size_for_drive_upload: Optional[int] = None):
         """
         Initialize orchestrator with download parameters.
         
@@ -31,7 +31,7 @@ class DownloadOrchestrator:
         self.url = url
         self.format = format
         self.quality = quality
-        self.min_size_for_drive_upload = min_size_for_drive_upload
+        self.min_size_for_drive_upload = min_size_for_drive_upload or 120 * 1024 * 1024
         logger.debug(f"File size limit set to: {self.min_size_for_drive_upload} bytes ({self.min_size_for_drive_upload / (1024*1024):.2f}MB)")
 
         self.downloader = YtDlpDownloader(url, format, quality)
