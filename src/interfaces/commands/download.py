@@ -14,7 +14,6 @@ from src.domain.interfaces.dto.request.download_request import DownloadRequest
 from src.domain.exceptions import (
     InvalidDownloadRequest,
     MediaFilepathNotFound,
-    DownloadFailed,
     UnsupportedFormat,
     FileTooLarge,
     NetworkError,
@@ -72,9 +71,12 @@ class DownloadCog(commands.Cog):
             url=url,
             format=format,
             quality=quality,
-            file_limit=interaction.guild.filesize_limit if interaction.guild.filesize_limit >= 25 * 1024 * 1024 else 120 * 1024 * 1024
         )
-
+        if interaction.is_guild_integration():
+            request.file_limit=interaction.guild.filesize_limit if interaction.guild.filesize_limit >= 25 * 1024 * 1024 else 120 * 1024 * 1024
+        else:
+            request.file_limit = None
+            
         usecase = self.builder.build_download_usecase()
         start_time = time.time()
         download_result = None

@@ -83,20 +83,15 @@ class YtDlpDownloader:
         self.yt_dlp_opts['outtmpl'] = str(Path(self.temp_dir) / "%(title)s.%(ext)s")
         logger.debug(f"yt-dlp output template: {self.yt_dlp_opts['outtmpl']}")
 
-    async def __aenter__(self):
-        """Async context manager entry: starts the download task."""
-        logger.debug("Starting download task in async context manager")
+    async def download(self):
+        """Download the media file using yt-dlp."""
+        logger.debug("Starting download task")
         loop = asyncio.get_running_loop()
         self._download_task = loop.run_in_executor(None, self._download)
         logger.debug("Download task submitted to executor")
         self.downloaded_filepath = await self._download_task
         logger.debug(f"Download task completed, file path: {self.downloaded_filepath}")
         return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit: placeholder (cleanup handled elsewhere)."""
-        logger.debug(f"Exiting downloader context manager, exc_type={exc_type}")
-        pass
 
     def get_file_path(self) -> Optional[Path]:
         """Get the downloaded file path."""

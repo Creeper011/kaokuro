@@ -44,7 +44,7 @@ class DownloadOrchestrator:
     async def __aenter__(self):
         """Async context manager entry: starts the download process."""
         logger.debug("Starting download process in orchestrator")
-        await self.downloader.__aenter__()
+        await self.downloader.download()
         self.file_path = self.downloader.get_file_path()
         logger.debug(f"Download completed, file path: {self.file_path}")
         return self
