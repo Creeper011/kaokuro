@@ -4,9 +4,9 @@ from typing import Optional
 from pathlib import Path
 
 from src.domain.interfaces.dto.output.download_output import DownloadOutput
-from src.infrastructure.services.downloader.yt_dlp_download import YtDlpDownloader
-from src.infrastructure.services.downloader.get_info import MediaInfoExtractor
-from src.infrastructure.services.drive.drive_loader import DriveLoader
+from src.infrastructure.services import YtDlpDownloader
+from src.infrastructure.services import MediaInfoExtractor
+from src.infrastructure.services import DriveLoader
 
 logger = logging.getLogger(__name__)
 
