@@ -211,9 +211,12 @@ class YtDlpDownloader:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(self.url, download=True)
             logger.debug(f"yt-dlp extraction completed, info keys: {list(info.keys()) if info else 'None'}")
-            if "entries" in info:
+            if "entries" in info and info["entries"]:
                 info = info["entries"][0]
-                logger.debug("Using first entry from playlist")
+                logger.debug("Using first entry from playlist/search results")
+            elif "entries" in info and not info["entries"]:
+                logger.error("No entries found in playlist/search results")
+                raise MediaFilepathNotFound("No entries found in playlist/search results")
 
         logger.debug("Resolving downloaded file path")
         return self._resolve_downloaded_file()
