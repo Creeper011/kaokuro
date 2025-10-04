@@ -71,8 +71,8 @@ class DownloadCog(commands.Cog):
         format="The format to download",
         invisible="If True, only you will see the result (ephemeral message)",
         quality="The quality to download",
-        should_transcode="Force transcoding even if not strictly necessary (may take longer) if true rather than remuxing when possible",
-        verbose="If true, show more detailed info about the output media file"
+        verbose="If true, show more detailed info about the output media file",
+        spoiler="If true, mark the file as a spoiler"
     )
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
@@ -83,7 +83,7 @@ class DownloadCog(commands.Cog):
         format: app_commands.Choice[str] = "mp4",
         quality: app_commands.Choice[str] = None,
         invisible: bool = False,
-        should_transcode: bool = False,
+        spoiler: bool = False,
         verbose: bool = False
     ):
         await interaction.response.defer(thinking=True, ephemeral=invisible)
@@ -98,7 +98,7 @@ class DownloadCog(commands.Cog):
             url=url,
             format=format,
             quality=quality,
-            should_transcode=should_transcode,
+            should_transcode=False,
             verbose=verbose
         )
         if interaction.is_guild_integration():
@@ -145,7 +145,7 @@ class DownloadCog(commands.Cog):
             else:
                 logger.debug(f"File downloaded successfully: {download_result.file_path}")
                 path = Path(os.path.relpath(download_result.file_path))
-                file = discord.File(path, filename=path.name)
+                file = discord.File(path, filename=path.name, spoiler=spoiler)
 
                 await interaction.followup.send("Sending file...")
 

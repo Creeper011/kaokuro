@@ -47,7 +47,7 @@ class YtDlpDownloader:
 
         self.FORMAT_MAP = {
             "mp4": {
-                "format": "bestvideo{video_quality}+bestaudio{audio_quality}/bestvideo{video_quality}+bestaudio{audio_quality}/bestvideo+bestaudio/best",
+                "format": "bestvideo{video_quality}[vcodec=avc1][ext=mp4]+bestaudio{audio_quality}/bestvideo[vcodec=avc1]{video_quality}+bestaudio{audio_quality}/bestvideo{video_quality}[ext=mp4]+bestaudio{audio_quality}/bestvideo{video_quality}+bestaudio{audio_quality}/bestvideo+bestaudio/best",
                 "post": [{'key': 'FFmpegVideoConvertor', 'preferedformat': "mp4"} if should_transcode else {'key': 'FFmpegVideoRemuxer', 'preferedformat': "mp4"}],
                 "is_audio": False
             },
