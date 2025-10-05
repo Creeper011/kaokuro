@@ -18,7 +18,7 @@ colorthief==0.2.1
 cryptography==44.0.1
 decorator==5.1.1
 discord-ext-voice-recv==0.4.2a145
-discord.py==2.4.0
+discord.py==2.6.3
 distro==1.9.0
 emoji==2.14.1
 flatbuffers==25.2.10
@@ -117,4 +117,4 @@ uritemplate==4.1.1
 urllib3==2.3.0
 validators==0.34.0
 yarl==1.18.3
-yt-dlp==2025.8.11
+yt-dlp==2025.9.26

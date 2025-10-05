@@ -197,7 +197,7 @@ class YtDlpDownloader:
         logger.debug(f"Starting download process at {self.start_time}")
 
         try:
-            # 1. Fetch info without downloading
+
             logger.debug(f"Fetching media info for URL: {self.url}")
             info_opts = self.yt_dlp_opts.copy()
             info_opts['postprocessors'] = []  # No post-processing for info fetching
@@ -222,7 +222,7 @@ class YtDlpDownloader:
                 )
                 self.format = 'mp3'
 
-            result = self._attempt_download_from_info(self.media_info)
+            result = self._attempt_download_from_info(processing_info)
             logger.debug(f"Download completed successfully: {result}")
             return result
         except Exception as e:
