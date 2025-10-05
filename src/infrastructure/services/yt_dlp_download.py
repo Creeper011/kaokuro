@@ -188,13 +188,41 @@ class YtDlpDownloader:
         return fmt, postprocessors
 
     def _download(self) -> Optional[Path]:
-        """Start the download process."""
+        """
+        Start the download process. It first fetches metadata to determine
+        if the media is audio-only, corrects the format if necessary,
+        and then proceeds with the download.
+        """
         self.start_time = time.time()
         logger.debug(f"Starting download process at {self.start_time}")
 
         try:
-            logger.debug(f"Attempting download with format: {self.format}")
-            result = self._attempt_download(self.format)
+            # 1. Fetch info without downloading
+            logger.debug(f"Fetching media info for URL: {self.url}")
+            info_opts = self.yt_dlp_opts.copy()
+            info_opts['postprocessors'] = []  # No post-processing for info fetching
+
+            with yt_dlp.YoutubeDL(info_opts) as ydl:
+                info = ydl.extract_info(self.url, download=False)
+                self.media_info = info.copy()
+            logger.debug("Media info fetched successfully.")
+
+            processing_info = self.media_info.copy()
+            if "entries" in processing_info and processing_info["entries"]:
+                processing_info = processing_info["entries"][0]
+            elif "entries" in processing_info and not processing_info["entries"]:
+                raise MediaFilepathNotFound("No entries found in playlist/search results")
+
+            is_audio_only = processing_info.get('vcodec') == 'none'
+            video_formats = ['mp4', 'mkv', 'webm']
+            if is_audio_only and self.format in video_formats:
+                logger.warning(
+                    f"Media is audio-only, but a video format ('{self.format}') was requested. "
+                    f"Forcing format to 'mp3'."
+                )
+                self.format = 'mp3'
+
+            result = self._attempt_download_from_info(self.media_info)
             logger.debug(f"Download completed successfully: {result}")
             return result
         except Exception as e:
@@ -202,28 +230,20 @@ class YtDlpDownloader:
             logger.debug(f"Download failure details: {type(e).__name__}: {e}")
             raise DownloadFailed(str(e)) from e
 
-    def _attempt_download(self, format: str, postprocessors: Optional[List[Dict[str, Any]]] = None) -> Optional[Path]:
-        """Attempt to download using the specified format and postprocessors."""
-        logger.debug(f"Attempting download with format: {format}")
-        ytdl_format, default_post = self._resolve_format(format)
-        postprocessors = postprocessors or default_post
-        logger.debug(f"Using postprocessors: {postprocessors}")
+    def _attempt_download_from_info(self, info: Dict[str, Any]) -> Optional[Path]:
+        """Downloads media using a pre-fetched info dictionary."""
+        logger.debug(f"Attempting download from info with resolved format: {self.format}")
+        ytdl_format, postprocessors = self._resolve_format(self.format)
 
         opts = self.yt_dlp_opts.copy()
         opts.update({'format': ytdl_format, 'postprocessors': postprocessors})
-        logger.debug(f"yt-dlp options: {opts}")
+        logger.debug(f"yt-dlp options for processing: {opts}")
 
-        logger.debug(f"Starting yt-dlp extraction for URL: {self.url}")
+        logger.debug("Starting yt-dlp processing from info dictionary")
         with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(self.url, download=True)
-            self.media_info = info.copy()
-            logger.debug(f"yt-dlp extraction completed, info keys: {list(info.keys()) if info else 'None'}")
-            if "entries" in info and info["entries"]:
-                info = info["entries"][0]
-                logger.debug("Using first entry from playlist/search results")
-            elif "entries" in info and not info["entries"]:
-                logger.error("No entries found in playlist/search results")
-                raise MediaFilepathNotFound("No entries found in playlist/search results")
+            # Use process_info to avoid re-fetching network resources
+            ydl.process_info(info)
+        logger.debug("yt-dlp processing completed.")
 
         logger.debug("Resolving downloaded file path")
         return self._resolve_downloaded_file()
