@@ -20,6 +20,7 @@ DEFAULT_YT_DLP_SETTINGS = {
     'restrictfilenames': True,
     'noplaylist': True,
     'no_warnings': True,
+    'cookiefile': 'cookies.txt',
     'concurrent_fragment_downloads': 10,
     'continue_dl': True,
     'external_downloader': 'aria2c',

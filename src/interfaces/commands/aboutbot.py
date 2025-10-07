@@ -2,6 +2,7 @@ import time
 import platform
 import distro
 import discord
+import datetime
 from discord import app_commands
 from discord.ext import commands
 
@@ -20,9 +21,22 @@ class BotInfo(commands.Cog):
         await self.bot.http.request(discord.http.Route('GET', '/gateway'))
         rest_ping = round((time.monotonic() - start) * 1000)
 
+        # Uptime calculation
+        if hasattr(self.bot, 'start_time'):
+            uptime_delta = datetime.datetime.now(datetime.timezone.utc) - self.bot.start_time
+            
+            days = uptime_delta.days
+            hours, remainder = divmod(uptime_delta.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            
+            uptime_str = f"{days}d {hours}h {minutes}m"
+        else:
+            uptime_str = "N/A"
+
         message = (
             f"Bot info 📦\n"
             f"> Name: {self.bot.user.name}\n"
+            f"> Uptime: {uptime_str}\n"
             f"> Shards: {self.bot.shard_count}\n"
             f"> Shard ID: {self.bot.shard_id}\n"
             f"> Running on system: {distro.name()} ({platform.system()})\n"

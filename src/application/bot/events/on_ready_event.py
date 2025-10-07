@@ -1,5 +1,6 @@
 import discord
 import logging
+import datetime
 from discord.ext import commands
 from src.application.bot.load_extensions import ExtensionLoader
 
@@ -13,6 +14,7 @@ class OnReadyEvent:
     
     async def handle_on_ready(self):
         """Handle the bot ready event with proper separation of concerns."""
+        self.bot.start_time = datetime.datetime.now(datetime.timezone.utc)
         await self._load_extensions()
         await self._sync_commands()
         logger.info(f"commands synced")

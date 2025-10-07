@@ -5,3 +5,5 @@ googleindentify.json
 __pycache__/
 temp
 .cache
+cookies.txt
+logs
