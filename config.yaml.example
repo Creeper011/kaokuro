@@ -1,0 +1,7 @@
+discord:
+  prefix: "?ç"
+  owner_id: discord owner id
+  intents:
+    guilds: true
+    messages: true
+    message_content: true

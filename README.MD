@@ -1,0 +1,1 @@
+bom... kaokuro v2? (kaoruko eu acho)
