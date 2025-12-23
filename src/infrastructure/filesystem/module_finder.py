@@ -27,5 +27,5 @@ class ModuleFinder():
             except Exception as e:
                 self.logger.error(f"Could not import module '{name}' from '{self.find_path}': {e}")
         
-        self.logger.info(f"Found {len(classes)} classes in {self.find_path}")
+        self.logger.debug(f"Found {len(classes)} classes in {self.find_path}")
         return classes

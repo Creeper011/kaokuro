@@ -30,7 +30,7 @@ class EnvLoader():
                 k: v for k, v in raw_env_data.items() if v is not None
             }
 
-            self.logger.info(f"Loaded {len(env_data)} variables from {self.config_path.name}")
+            self.logger.debug(f"Loaded {len(env_data)} variables from {self.config_path.name}")
             return env_data
 
         except Exception as e:

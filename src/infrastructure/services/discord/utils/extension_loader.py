@@ -19,7 +19,7 @@ class ExtensionLoader:
         self.services = services
         self.extension_finder = extension_finder
         self.logger = logger
-        self.logger.info(f"ExtensionLoader initialized with {len(services)} services.")
+        self.logger.debug(f"ExtensionLoader initialized with {len(services)} services.")
 
     async def load_extensions(self) -> None:
         """Finds and loads all extensions, injecting dependencies."""
@@ -43,9 +43,9 @@ class ExtensionLoader:
 
                 cog_instance = cog_class(self.bot, **dependencies)
                 await self.bot.add_cog(cog_instance)
-                self.logger.info(f"Successfully loaded extension '{cog_class.__name__}'.")
+                self.logger.debug(f"Successfully loaded extension '{cog_class.__name__}'.")
 
             except Exception as e:
                 self.logger.error(f"Failed to load extension '{cog_class.__name__}': {e}", exc_info=True)
 
-        self.logger.info(f"Finished loading extensions. {len(cogs_to_load)} cogs were processed.")
+        self.logger.debug(f"Finished loading extensions. {len(cogs_to_load)} cogs were processed.")

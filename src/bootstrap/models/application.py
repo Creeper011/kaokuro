@@ -1,6 +1,7 @@
 from logging import Logger
 from discord.ext.commands import Bot
 from src.infrastructure.services.config.models.application_settings import ApplicationSettings
+from src.presentation import AsciiArt
 
 class Application():
     """Represents the entire application runtime"""
@@ -15,6 +16,7 @@ class Application():
         if not self.bot or not self.settings:
             raise RuntimeError("Application has not been built. Call build() before running.")
         
+        AsciiArt.print_ascii_art(self.logger)
         self.logger.info("Starting Discord bot...")
         await self.bot.start(token=self.settings.bot_settings.token)
 
