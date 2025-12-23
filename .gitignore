@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 *.pyo
 config.yaml
+config.yml
 
 .venv/
 venv/

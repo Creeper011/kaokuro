@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 from discord.ext import commands
 from discord import Intents
+from src.core.constants import DEFAULT_DISCORD_RECONNECT
 
 class BaseBot(commands.AutoShardedBot):
     """
@@ -13,3 +14,8 @@ class BaseBot(commands.AutoShardedBot):
         if logger:
             self.logger = logger
             logger.info("BaseBot initialized")
+
+    def run_bot(self, token: str, reconnect: Optional[bool] = None):
+        super().run(
+            token,
+            reconnect=reconnect if reconnect is not None else DEFAULT_DISCORD_RECONNECT)

@@ -19,13 +19,11 @@ class BotFactory():
         self.basebot = basebot
         self.logger = logger
 
-    def create_bot(self, bot: type[AutoShardedBot | Bot], settings: BotSettings) -> BaseBot: # NOTE: caso haja necessidade, separar por intents, prefix ao ínves do modelo completo
+    def create_bot(self, settings: BotSettings) -> BaseBot: # NOTE: caso haja necessidade, separar por intents, prefix ao ínves do modelo completo
         """
         Creates and returns a configured Discord bot instance.
 
         Args:
-            bot (type[AutoShardedBot | Bot]): The bot class to be instantiated
-                (e.g., Bot or AutoShardedBot).
             settings (BotSettings): Configuration object containing bot settings
                 such as command prefix and intents.
 
