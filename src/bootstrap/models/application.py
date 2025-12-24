@@ -1,5 +1,6 @@
 from logging import Logger
 from discord.ext.commands import Bot
+from src.core.constants import DEFAULT_DISCORD_RECONNECT
 from src.infrastructure.services.config.models.application_settings import ApplicationSettings
 from src.presentation import AsciiArt
 
@@ -18,7 +19,16 @@ class Application():
         
         AsciiArt.print_ascii_art(self.logger)
         self.logger.info("Starting Discord bot...")
-        await self.bot.start(token=self.settings.bot_settings.token)
+        try:
+            await self.bot.start(token=self.settings.bot_settings.token, reconnect=DEFAULT_DISCORD_RECONNECT)
+        except (TypeError, ValueError) as error:
+            self.logger.critical("Could not start the application due the Discord Token is not valid. Make sure if you running the project in the correct root directory.",
+            exc_info=error,
+        )
+        except Exception as error:
+            self.logger.critical("A critical error occurred during application Discord Bot startup",
+            exc_info=error,
+        )
 
     async def shutdown(self) -> None:
         self.logger.info("Starting shutdown process")

@@ -10,6 +10,8 @@ class ModuleFinder():
     def __init__(self, logger: Logger, find_path: Path, class_to_find: type) -> None:
         self.logger = logger
         self.find_path = find_path
+        if not isinstance(self.find_path, Path):
+            raise TypeError("Find_path should be an Path object")
         self.class_to_find = class_to_find
 
     def find_classes(self) -> list[type]:
@@ -27,5 +29,5 @@ class ModuleFinder():
             except Exception as e:
                 self.logger.error(f"Could not import module '{name}' from '{self.find_path}': {e}")
         
-        self.logger.debug(f"Found {len(classes)} classes in {self.find_path}")
+        self.logger.debug(f"Found {len(classes)} classes in {self.find_path.absolute()}")
         return classes

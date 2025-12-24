@@ -9,13 +9,11 @@ async def main() -> None:
 
     try:
         builder = ApplicationBuilder()
-
         application = await builder.build()
-
         await application.run()
 
     except Exception as error:
-        logger.critical(
+        application.logger.critical(
             "A critical error occurred during application startup",
             exc_info=error,
         )
