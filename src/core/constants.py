@@ -8,3 +8,4 @@ DEFAULT_ENV_CONFIG_PATH = Path(".env")
 DEFAULT_LOADERS_PATH = Path("src/infrastructure/services/config/loaders")
 DEFAULT_COMMANDS_PATH = Path("src/presentation/discord/commands")
 DEFAULT_DISCORD_RECONNECT = True
+DEFAULT_DEBUG_FLAG = ("-d", "--debug")

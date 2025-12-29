@@ -1,4 +1,5 @@
 import argparse
+from src.core.constants import DEFAULT_DEBUG_FLAG
 
 class ArgParser:
     """Parse all CLI arguments"""
@@ -9,10 +10,10 @@ class ArgParser:
 
     def _add_args(self) -> None:
         self.parser.add_argument(
-            "-d", "--debug",
+            *DEFAULT_DEBUG_FLAG,
             action="store_true",
             help="Enable debug logging"
         )
 
-    def parse(self) -> argparse.Namespace:
+    def parse_cli(self) -> argparse.Namespace:
         return self.parser.parse_args()

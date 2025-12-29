@@ -15,7 +15,7 @@ class LoggingConfigurator():
         Parses command-line arguments and configures the application's
         logging level.
         """
-        cli_args = self._arg_parser.parse()
+        cli_args = self._arg_parser.parse_cli()
 
         log_level = logging.INFO
         if cli_args.debug:
