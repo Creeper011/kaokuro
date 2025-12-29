@@ -6,6 +6,7 @@ from src.bootstrap.application_builder import ApplicationBuilder
 
 async def main() -> None:
     """The main entry point for the application."""
+    application = None
 
     try:
         builder = ApplicationBuilder()
@@ -13,7 +14,7 @@ async def main() -> None:
         await application.run()
 
     except Exception as error:
-        application.logger.critical(
+        logging.getLogger(__name__).critical(
             "A critical error occurred during application startup",
             exc_info=error,
         )
