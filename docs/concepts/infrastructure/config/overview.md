@@ -1,16 +1,16 @@
-# Configuration System overview (infrastructure)
+# Configuration System Overview (Infrastructure)
 
-O Sistema de configuração é uma parte crucial para o funcionamento do projeto, sem ele, não poderíamos trocar e nem manter facilmente informações importantes que contribuem para o funcionamento/execução do código.
+The configuration system is a crucial part of the project's operation. Without it, we would not be able to easily change or maintain important information that contributes to the execution and functioning of the code.
 
-- A ideia gira quase toda em torno do modelo de configurações, o `ApplicationSettings`, uma dataclass imutável que contém todas as configurações (incluindo detalhes da infraestrutura) que envolvem a aplicação e seu funcionamento.
+- The concept revolves almost entirely around the configuration model, `ApplicationSettings`, an immutable dataclass that contains all settings (including infrastructure details) related to the application and its operation.
 
-- O projeto segue como um dos princípios o SRP (Single Responsibility Principle) ou Princípio de Responsabilidade Única, sendo assim, esse sistema se divide em 4 categorias com suas respectivas funções:
-    - Factory -> Coordena toda a execução para construir o modelo de configuração
-    - Loaders -> Apenas carregam os dados de configuração
-    - Parsers -> Convertem dados recebidos em objetos
-    - Mappers -> Mapeiam/Constroem o modelo de configuração
+- The project follows the SRP (Single Responsibility Principle), so this system is divided into 4 categories with their respective roles:  
+    - **Factory** → Coordinates the entire process to build the configuration model  
+    - **Loaders** → Only load configuration data  
+    - **Parsers** → Convert received data into objects  
+    - **Mappers** → Map/build the configuration model  
 
-- Além disso, a Factory não depende diretamente de nenhuma dependência, ela espera que sejam injetadas suas dependências, facilitando testes e mocks.
-    - Obs.: É importante notar que a Factory espera uma implementação/interface de um Config loader, sendo um fator importante para garantir testabilidade e mockagem.
+- Furthermore, the Factory does not directly depend on any dependencies; it expects them to be injected, which facilitates testing and mocking.  
+    - Note: It is important to highlight that the Factory expects an implementation/interface of a Config loader, which is a key factor to ensure testability and mockability.
 
-- Essa implementação como já dito antes garante uma ótima testabilidade seguindo princípios modernos de engenharia de software.
+- As mentioned before, this implementation ensures excellent testability by following modern software engineering principles.
