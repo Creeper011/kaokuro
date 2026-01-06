@@ -1,3 +1,4 @@
+import asyncio
 from src.application.protocols.download_service_protocol import DownloadServiceProtocol
 from src.application.protocols.temp_service_protocol import TempServiceProtocol
 from src.application.protocols.cache_service_protocol import CacheServiceProtocol
@@ -22,14 +23,14 @@ class DownloadUsecase():
                 return DownloadOutput(
                     file_path=None, 
                     file_url=cached_item.remote_url,
-                    file_size=None
+                    file_size=cached_item.file_size
                 )
             
             if cached_item.local_path and cached_item.local_path.exists():
                 return DownloadOutput(
                     file_path=cached_item.local_path,
                     file_url=None,
-                    file_size=cached_item.local_path.stat().st_size
+                    file_size=cached_item.file_size or cached_item.local_path.stat().st_size
                 )
 
         async with self.temp_service.create_session() as temp_folder:
