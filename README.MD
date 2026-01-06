@@ -13,6 +13,10 @@ Kaoruko is a lovable Discord bot built with discord.py (Python) featuring a modu
 - Download command (in progress)
 - Speed command (in progress)
 
+**Requirements:**
+- Python 3.12.5+
+- Make
+
 **Installation:**
 1. Clone the repository
 2. Navigate to the project directory
