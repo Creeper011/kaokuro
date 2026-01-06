@@ -14,7 +14,10 @@ from src.bootstrap.startup import (
 from src.infrastructure.services.config.models import ApplicationSettings
 from src.infrastructure.services.discord import BaseBot
 from src.infrastructure.services.discord.factories.bot_factory import BotFactory
+from src.bootstrap.models.services import Services
+from src.domain.models.download_settings import DownloadSettings
 
+from src.application.usecases.download_usecase import DownloadUsecase
 
 class ApplicationBuilder:
     """Builds the application and all its runtime dependencies."""
@@ -61,7 +64,23 @@ class ApplicationBuilder:
             logger=self.logger,
         )
 
-        await discord_startup.load_extensions(services={})
+        # note: add a separeted services builder if needed, for now we construct services here directly
+        typed_services = Services(
+            DownloadSettings=self.settings.download_settings,
+            DownloadUsecase=DownloadUsecase(
+                download_service=None,  # to be implemented
+                temp_service=None,      # to be implemented
+                cache_service=None,     # to be implemented
+                storage_service=None,   # to be implemented
+            ),
+        )
+
+        extension_services = {
+            DownloadSettings: typed_services['DownloadSettings'],
+            DownloadUsecase: typed_services['DownloadUsecase'],
+        }
+
+        await discord_startup.load_extensions(services=extension_services)
         self.logger.info("Discord bot built successfully")
 
     async def build(self) -> Application:

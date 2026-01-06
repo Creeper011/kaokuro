@@ -7,7 +7,8 @@ from discord import app_commands
 class DownloadCog(commands.Cog):
     """Cog for download command."""
 
-    def __init__(self, download_usecase: DownloadUsecase, download_settings: DownloadSettings) -> None:
+    def __init__(self, bot: commands.Bot, download_usecase: DownloadUsecase, download_settings: DownloadSettings) -> None:
+        self.bot = bot
         self.download_usecase = download_usecase
         self.download_settings = download_settings
 
