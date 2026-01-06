@@ -6,3 +6,8 @@ discord:
     messages: true
     message_content: true
   is_mobile: true
+download:
+  file_size_limit: 26214400  # 25MB
+  blacklist_sites:
+    - "example.com"
+    - "anotherexample.com"
