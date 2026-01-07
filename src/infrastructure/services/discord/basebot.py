@@ -10,9 +10,8 @@ class BaseBot(commands.AutoShardedBot):
     """
     def __init__(self, command_prefix: str, intents: Intents, logger: Optional[logging.Logger] = None):
         super().__init__(command_prefix=command_prefix, intents=intents)
-        if logger:
-            self.logger = logger
-            logger.info("BaseBot initialized")
+        self.logger = logger or logging.getLogger(self.__class__.__name__)
+        self.logger.info("BaseBot initialized")
 
     async def setup_hook(self) -> None:
         if hasattr(self, 'logger') and self.logger:

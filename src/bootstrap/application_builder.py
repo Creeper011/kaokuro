@@ -38,7 +38,7 @@ class ApplicationBuilder:
             raise RuntimeError("Logger must be configured before building settings.")
         self.logger.info("Building application settings")
 
-        self.settings = SettingsBuilder(logger=self.logger).build_settings()
+        self.settings = SettingsBuilder().build_settings()
 
     async def _build_google_drive(self) -> None:
         """Builds Google Drive-related components."""
@@ -48,10 +48,8 @@ class ApplicationBuilder:
         if self.settings.drive_settings is None:
             raise RuntimeError("Drive settings must be configured.")
 
-        self.logger.info("Building Google Drive login service")
 
         self.drive_login_service = await DriveSetup(
-            logger=self.logger,
             drive_settings=self.settings.drive_settings,
         ).build_login_service()
 
@@ -80,11 +78,9 @@ class ApplicationBuilder:
 
         discord_startup = DiscordExtensionStartup(
             bot=cast(Bot, self.bot),
-            logger=self.logger,
         )
 
         extension_services = ExtensionServicesBuilder(
-            logger=self.logger,
             drive_login=self.drive_login_service,
         ).build_services(settings=self.settings)
 
@@ -111,5 +107,4 @@ class ApplicationBuilder:
             bot=cast(AutoShardedBot, self.bot),
             drive=self.drive_login_service,
             settings=self.settings,
-            logger=self.logger,
         )

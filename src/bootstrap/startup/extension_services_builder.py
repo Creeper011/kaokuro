@@ -1,5 +1,5 @@
+import logging
 from typing import Iterable, Any
-from logging import Logger
 
 from src.infrastructure.services.config.models import ApplicationSettings
 
@@ -14,8 +14,8 @@ from src.infrastructure.services.drive.google_drive_uploader_service import Goog
 class ExtensionServicesBuilder:
     """Builds services related to extensions that gonna be used by Discord Module"""
 
-    def __init__(self, logger: Logger, drive_login: GoogleDriveLoginService) -> None:
-        self.logger = logger
+    def __init__(self, drive_login: GoogleDriveLoginService) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.drive_login = drive_login
 
     def build_services(self, settings: ApplicationSettings) -> Iterable[Any]:

@@ -1,4 +1,4 @@
-from logging import Logger
+import logging
 from discord.ext.commands import Cog, Bot
 from typing import Iterable, Any
 from src.core.constants import DEFAULT_COMMANDS_PATH
@@ -8,9 +8,9 @@ from src.infrastructure.filesystem.module_finder import ModuleFinder
 class DiscordExtensionStartup():
     """Startup Extension Loader system injecting their dependencies"""
 
-    def __init__(self, *, bot: Bot, logger: Logger) -> None:
+    def __init__(self, *, bot: Bot) -> None:
         self.bot = bot
-        self.logger = logger
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     async def load_extensions(self, services: Iterable[Any]) -> None:
         module_finder = ModuleFinder(

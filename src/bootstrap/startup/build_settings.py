@@ -1,4 +1,4 @@
-from logging import Logger
+import logging
 from src.infrastructure.services.config.utils.loaders_finder import LoadersFinder
 from src.infrastructure.services.config.parsers import SettingsParser
 from src.infrastructure.services.config.mappers import SettingsMapper
@@ -8,8 +8,8 @@ from src.infrastructure.services.config.models.application_settings import Appli
 class SettingsBuilder():
     """Contains all process to build the settings (config) system"""
 
-    def __init__(self, logger: Logger) -> None:
-        self.logger = logger
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def build_settings(self) -> ApplicationSettings:
         loaders_finder = LoadersFinder(self.logger)

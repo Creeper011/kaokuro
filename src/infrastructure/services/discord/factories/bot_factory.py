@@ -35,4 +35,4 @@ class BotFactory():
         if settings.intents is None:
             raise ValueError("Bot intents must be set in settings.")
 
-        return self.basebot(command_prefix=settings.prefix, intents=settings.intents, logger=self.logger)
+        return self.basebot(command_prefix=settings.prefix, intents=settings.intents)

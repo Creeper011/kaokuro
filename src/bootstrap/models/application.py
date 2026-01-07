@@ -1,4 +1,4 @@
-from logging import Logger
+import logging
 from discord.ext.commands import AutoShardedBot
 from src.core.constants import DEFAULT_DISCORD_RECONNECT
 from src.infrastructure.services.config.models.application_settings import ApplicationSettings
@@ -8,12 +8,12 @@ from src.utils import AsciiArt
 class Application():
     """Represents the entire application runtime"""
 
-    def __init__(self, bot: AutoShardedBot, drive: GoogleDriveLoginService, settings: ApplicationSettings, logger: Logger) -> None:
+    def __init__(self, bot: AutoShardedBot, drive: GoogleDriveLoginService, settings: ApplicationSettings) -> None:
         self.bot = bot
         self.drive = drive
         self.settings = settings
-        self.logger = logger
-
+        self.logger = logging.getLogger(self.__class__.__name__)
+        
     async def run(self) -> None:
         """Runs the application"""
         if not self.bot or not self.settings:

@@ -54,6 +54,15 @@ class GoogleDriveUploaderService():
 
                 self.logger.debug(f"Executing upload attempt {attempt + 1}/{self.max_retries}...")
                 file_id = await asyncio.to_thread(_sync_upload)
+
+                def _make_public():
+                    drive_service.permissions().create(
+                        fileId=file_id,
+                        body={'role': 'reader', 'type': 'anyone'},
+                        fields='id'
+                    ).execute()
+
+                await asyncio.to_thread(_make_public)
                 
                 self.logger.info(f"File uploaded successfully. ID: {file_id}")
                 return "%s%s" % (DRIVE_BASE_FILE_UPLOAD_URL, file_id)
