@@ -17,7 +17,7 @@ class DownloadCog(commands.Cog):
         
         download_request = DownloadRequest(
             url=url,
-            file_size_limit=self.download_settings.file_size_limit,
+            file_size_limit=25 * 1024 * 1024,  # 25 MB limit
         )
         
         try:
@@ -32,3 +32,5 @@ class DownloadCog(commands.Cog):
         
         except Exception as e:
             await interaction.followup.send(f"An error occurred during download: {str(e)}")
+
+            

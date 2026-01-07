@@ -1,0 +1,45 @@
+from typing import Iterable, Any
+from logging import Logger
+
+from src.infrastructure.services.config.models import ApplicationSettings
+
+from src.application.usecases.download_usecase import DownloadUsecase
+from src.infrastructure.services.ytdlp.ytdlp_download_service import YtdlpDownloadService
+from src.infrastructure.services.url_validator import UrlValidator
+from src.infrastructure.services.temp_service import TempService
+from src.infrastructure.services.cache_service import CacheService
+from src.infrastructure.services.drive.google_drive_login_service import GoogleDriveLoginService
+from src.infrastructure.services.drive.google_drive_uploader_service import GoogleDriveUploaderService
+
+class ExtensionServicesBuilder:
+    """Builds services related to extensions that gonna be used by Discord Module"""
+
+    def __init__(self, logger: Logger, drive_login: GoogleDriveLoginService) -> None:
+        self.logger = logger
+        self.drive_login = drive_login
+
+    def build_services(self, settings: ApplicationSettings) -> Iterable[Any]:
+        """Builds and returns services for extensions."""
+        self.logger.info("Building extension services")
+
+        if settings.download_settings is None:
+            raise RuntimeError("Download settings must be configured to build services.")
+        
+        extension_services: Iterable[Any] = {
+            DownloadUsecase(
+                logger=self.logger,
+                download_service=YtdlpDownloadService(logger=self.logger),
+                temp_service=TempService(logger=self.logger),
+                cache_service=CacheService(logger=self.logger),
+                storage_service=GoogleDriveUploaderService(
+                    logger=self.logger, 
+                    login_service=self.drive_login,
+                    drive_folder_id=settings.drive_settings.folder_id,
+                ),
+                url_validator=UrlValidator(self.logger),
+                blacklist_sites=settings.download_settings.blacklist_sites,
+            ),
+        }
+
+        self.logger.info("Extension services built successfully")
+        return extension_services

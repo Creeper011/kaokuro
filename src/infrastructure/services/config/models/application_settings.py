@@ -2,6 +2,7 @@ from typing import Optional
 from discord import Intents
 from dataclasses import dataclass
 from src.domain.models.download_settings import DownloadSettings
+from src.domain.models.drive_settings import DriveSettings
 
 @dataclass(frozen=True)
 class BotSettings():
@@ -15,3 +16,4 @@ class ApplicationSettings():
     """All settings"""
     bot_settings: Optional[BotSettings] = None
     download_settings: Optional[DownloadSettings] = None
+    drive_settings: Optional[DriveSettings] = None

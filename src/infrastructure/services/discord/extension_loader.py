@@ -1,35 +1,33 @@
 import inspect
 from logging import Logger
-from typing import Any, Dict, Type, Iterable
+from typing import Any, Dict, Type, Iterable, List
 from discord.ext.commands import Bot, Cog
 
 class ExtensionLoader():
     """Class to load extensions (cogs) into the bot with dependency injection."""
 
-    def __init__(self, logger: Logger, bot: Bot, extensions: Iterable[Type[Cog]], services: Dict[Type, Any]):
+    # 1. Mudamos de Dict para Iterable na tipagem
+    def __init__(self, logger: Logger, bot: Bot, extensions: Iterable[Type[Cog]], services: Iterable[Any]):
         """
-        Initializes the ExtensionLoader.
-
         Args:
-            bot (Bot): The bot instance.
-            extensions (Cog): The extensions to load
-            services (Dict[Type, Any]): A dictionary mapping service types to their instances.
+            logger (Logger): Logger instance for logging.
+            bot (Bot): The Discord bot instance.
+            extensions (Iterable[Type[Cog]]): An iterable of Cog classes to be loaded.
+            services (Iterable[Any]): A list or set of service instances.
         """
         self.bot = bot
-        self.services = services
+        self.services = list(services)
         self.extensions = extensions
         self.logger = logger
-        self.logger.debug(f"ExtensionLoader initialized with {len(services)} services and {len(extensions)} extensions.")
+        self.logger.debug(f"ExtensionLoader initialized with {len(self.services)} services and {len(list(extensions))} extensions.")
 
     async def load_extensions(self) -> None:
-        """Loads all provided cogs, resolving and injecting dependencies."""
         self.logger.info("Starting extension loading...")
 
         for cog_class in self.extensions:
             try:
                 cog = self._instantiate_cog(cog_class)
                 await self.bot.add_cog(cog)
-
                 self.logger.debug(f"Successfully loaded extension {cog_class.__name__}")
 
             except Exception as error:
@@ -37,9 +35,7 @@ class ExtensionLoader():
 
         self.logger.info("Finished loading extensions.")
 
-    # um util
     def _instantiate_cog(self, cog_class: Type[Cog]) -> Cog:
-        """Creates a cog instance resolving its constructor dependencies."""
         signature = inspect.signature(cog_class.__init__)
         dependencies: Dict[str, Any] = {}
 
@@ -49,12 +45,17 @@ class ExtensionLoader():
 
             param_type = param.annotation
 
-            if param_type not in self.services:
+            found_service = next(
+                (service for service in self.services if isinstance(service, param_type)), 
+                None
+            )
+
+            if found_service is None:
                 raise TypeError(
-                    f"Service '{param_type.__name__}' not registered "
+                    f"Service of type '{param_type.__name__}' not found (registered) "
                     f"for cog '{cog_class.__name__}'."
                 )
 
-            dependencies[name] = self.services[param_type]
+            dependencies[name] = found_service
 
         return cog_class(self.bot, **dependencies)

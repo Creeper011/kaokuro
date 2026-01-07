@@ -1,17 +1,75 @@
+import asyncio
 from logging import Logger
 from pathlib import Path
-from infrastructure.services.drive.google_drive_login_service import GoogleDriveLoginService
+from typing import Optional
 
+from googleapiclient.http import MediaFileUpload
+from src.infrastructure.services.drive.google_drive_login_service import GoogleDriveLoginService
+from src.core.constants import DRIVE_MAX_RETRY_COUNT, DRIVE_BASE_FILE_UPLOAD_URL
 
 class GoogleDriveUploaderService():
     """Service for uploading files to Google Drive."""
     
-    def __init__(self, logger: Logger, login_service: GoogleDriveLoginService) -> None:
+    def __init__(self, logger: Logger, login_service: GoogleDriveLoginService, drive_folder_id: str, max_retries: Optional[int] = DRIVE_MAX_RETRY_COUNT) -> None:
         self.logger = logger
         self.login_service = login_service
+        self.drive_folder_id = drive_folder_id
+        self.max_retries = max_retries
         self.logger.info("GoogleDriveUploaderService initialized")
 
     async def upload(self, file_path: Path) -> str:
-        self.logger.info(f"Uploading file to Google Drive: {file_path}")
+        """
+        Uploads a file to Google Drive with retry logic and reconnection attempt.
+        Returns the file ID.
+        """
+        self.logger.info(f"Starting upload for file: {file_path}")
 
-        # Implement the actual upload logic with a retry logic and using reconnect if needed
+        if not file_path.exists():
+            msg = f"File to upload not found: {file_path}"
+            self.logger.error(msg)
+            raise FileNotFoundError(msg)
+
+        attempt = 0
+        last_error = None
+
+        while attempt < self.max_retries:
+            try:
+                drive_service = await self.login_service.get_instance_drive()
+
+                file_metadata = {
+                    'name': file_path.name, 
+                    'parents': [self.drive_folder_id]
+                }
+                
+                media = MediaFileUpload(str(file_path), resumable=True)
+
+                def _sync_upload():
+                    request = drive_service.files().create(
+                        body=file_metadata,
+                        media_body=media,
+                        fields='id'
+                    )
+                    response = request.execute()
+                    return response.get('id')
+
+                self.logger.debug(f"Executing upload attempt {attempt + 1}/{self.max_retries}...")
+                file_id = await asyncio.to_thread(_sync_upload)
+                
+                self.logger.info(f"File uploaded successfully. ID: {file_id}")
+                return "%s%s" % (DRIVE_BASE_FILE_UPLOAD_URL, file_id)
+
+            except Exception as e:
+                attempt += 1
+                last_error = e
+                self.logger.warning(f"Upload failed (Attempt {attempt}/{self.max_retries}). Error: {e}")
+
+                if attempt < self.max_retries:
+                    self.logger.info("Attempting to reconnect before retrying...")
+                    try:
+                        await self.login_service.reconnect()
+                    except Exception as reconnect_error:
+                        self.logger.error(f"Reconnection failed: {reconnect_error}")
+                else:
+                    self.logger.critical(f"All upload attempts failed for {file_path}.")
+
+        raise last_error

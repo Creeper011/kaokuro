@@ -1,8 +1,6 @@
 import logging
 from typing import cast
-
 from discord.ext.commands import Bot, AutoShardedBot
-
 from src.bootstrap.models.application import Application
 from src.bootstrap.startup import (
     ArgParser,
@@ -10,20 +8,12 @@ from src.bootstrap.startup import (
     LoggingConfigurator,
     LoggingSetup,
     SettingsBuilder,
+    ExtensionServicesBuilder,
+    DriveSetup,
 )
 from src.infrastructure.services.config.models import ApplicationSettings
 from src.infrastructure.services.discord import BaseBot
 from src.infrastructure.services.discord.factories.bot_factory import BotFactory
-from src.bootstrap.models.services import Services
-
-from src.domain.models.download_settings import DownloadSettings
-from src.application.usecases.download_usecase import DownloadUsecase
-from src.infrastructure.services.ytdlp.ytdlp_download_service import YtdlpDownloadService
-from src.infrastructure.services.temp_service import TempService
-from src.infrastructure.services.cache_service import CacheService
-
-from infrastructure.services.drive.google_drive_login_service import GoogleDriveLoginService
-from infrastructure.services.drive.google_drive_uploader_service import GoogleDriveUploaderService
 
 class ApplicationBuilder:
     """Builds the application and all its runtime dependencies."""
@@ -50,6 +40,23 @@ class ApplicationBuilder:
 
         self.settings = SettingsBuilder(logger=self.logger).build_settings()
 
+    async def _build_google_drive(self) -> None:
+        """Builds Google Drive-related components."""
+        if self.settings is None or not self.logger:
+            raise RuntimeError("Settings and logger must be configured before Google Drive components.")
+
+        if self.settings.drive_settings is None:
+            raise RuntimeError("Drive settings must be configured.")
+
+        self.logger.info("Building Google Drive login service")
+
+        self.drive_login_service = await DriveSetup(
+            logger=self.logger,
+            drive_settings=self.settings.drive_settings,
+        ).build_login_service()
+
+        self.logger.info("Google Drive login service built successfully")
+        
     async def _build_discord(self) -> None:
         """Builds Discord-related components."""
         if self.settings is None or not self.logger:
@@ -60,6 +67,9 @@ class ApplicationBuilder:
 
         if self.settings.download_settings is None:
             raise RuntimeError("Download settings must be configured.")
+        
+        if not self.drive_login_service:
+            raise RuntimeError("Drive login service must be built before Discord components.")
 
         self.logger.info("Building Discord bot")
 
@@ -73,22 +83,10 @@ class ApplicationBuilder:
             logger=self.logger,
         )
 
-        # note: add a separeted services builder if needed, for now we construct services here directly
-        typed_services = Services(
-            DownloadUsecase=DownloadUsecase(
-                logger=self.logger,
-                blacklist_sites=self.settings.download_settings.blacklist_sites,
-                download_service=YtdlpDownloadService(logger=self.logger),
-                temp_service=TempService(logger=self.logger),
-                cache_service=CacheService(logger=self.logger),
-                storage_service=GoogleDriveUploaderService(logger=self.logger, login_service=GoogleDriveLoginService(logger=self.logger)),   # to be implemented
-            ),
-        )
-
-        extension_services = {
-            DownloadSettings: typed_services['DownloadSettings'],
-            DownloadUsecase: typed_services['DownloadUsecase'],
-        }
+        extension_services = ExtensionServicesBuilder(
+            logger=self.logger,
+            drive_login=self.drive_login_service,
+        ).build_services(settings=self.settings)
 
         await discord_startup.load_extensions(services=extension_services)
         self.logger.info("Discord bot built successfully")
@@ -101,6 +99,7 @@ class ApplicationBuilder:
             raise RuntimeError("Logging configuration failed.")
 
         self._build_settings()
+        await self._build_google_drive()
         await self._build_discord()
 
         if self.bot is None or self.settings is None:
@@ -110,6 +109,7 @@ class ApplicationBuilder:
 
         return Application(
             bot=cast(AutoShardedBot, self.bot),
+            drive=self.drive_login_service,
             settings=self.settings,
             logger=self.logger,
         )

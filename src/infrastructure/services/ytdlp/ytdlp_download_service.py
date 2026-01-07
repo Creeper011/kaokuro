@@ -1,8 +1,9 @@
 import yt_dlp
+import asyncio
 from pathlib import Path
 from logging import Logger
 from typing import Any, Dict
-
+from src.core.constants import DEFAULT_YT_DLP_SETTINGS
 
 class YtdlpDownloadService:
     """Service for downloading files using yt-dlp."""
@@ -23,12 +24,8 @@ class YtdlpDownloadService:
         """
         return {
             'outtmpl': str(output_folder / '%(title)s.%(ext)s'),
-            'format': 'best',
-            'quiet': False,
-            'no_warnings': False,
-            'extract_flat': False,
+            **DEFAULT_YT_DLP_SETTINGS,
             'logger': self.logger,
-            'progress_hooks': [self._progress_hook],
         }
 
     def _progress_hook(self, d: Dict[str, Any]) -> None:
@@ -38,12 +35,7 @@ class YtdlpDownloadService:
         Args:
             d: Dictionary containing progress information
         """
-        if d['status'] == 'downloading':
-            percent = d.get('_percent_str', 'N/A')
-            speed = d.get('_speed_str', 'N/A')
-            self.logger.debug(f"Downloading: {percent} at {speed}")
-        elif d['status'] == 'finished':
-            self.logger.info(f"Download finished: {d.get('filename', 'unknown')}")
+        ...
 
     async def download(self, url: str, output_folder: Path) -> Path:
         """
@@ -59,6 +51,11 @@ class YtdlpDownloadService:
         Raises:
             Exception: If download fails
         """
+        loop = asyncio.get_running_loop()
+        self._download_task = loop.run_in_executor(None, self._download_sync, url, output_folder)
+        return await self._download_task
+    
+    def _download_sync(self, url: str, output_folder: Path) -> Path:
         self.logger.info(f"Starting download from: {url}")
         
         if not output_folder.exists():

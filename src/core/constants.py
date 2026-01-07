@@ -1,6 +1,7 @@
 """This module defines all default costants.. normaly used as fallback values."""
 
 from pathlib import Path
+from yt_dlp.utils import match_filter_func
 
 DEFAULT_YAML_CONFIG_PATH = Path("config.yaml")
 YAML_FILE_ENCODING = "UTF-8"
@@ -12,3 +13,16 @@ DEFAULT_DEBUG_FLAG = ("-d", "--debug")
 CACHE_DIR = Path(".cache")
 CACHE_INDEX_FILE = CACHE_DIR / "index.json"
 DEFAULT_TEMP_DIR = Path(".temp")
+DRIVE_MAX_RETRY_COUNT = 3
+DEFAULT_YT_DLP_SETTINGS = {
+    'format': 'best',
+    'postprocessors': [],
+    'noplaylist': True,
+    'no_warnings': True,
+    'concurrent_fragment_downloads': 10,
+    'continue_dl': True,
+    'external_downloader': 'aria2c',
+    'external_downloader_args': {'default': ['-x', '16', '-s', '16', '-k', '1M']},
+    'match_filter': match_filter_func("!is_live"),
+}
+DRIVE_BASE_FILE_UPLOAD_URL = "https://drive.google.com/file/d/"
