@@ -1,4 +1,6 @@
 from logging import Logger
+from pathlib import Path
+from typing import Optional
 from src.application.protocols.download_service_protocol import DownloadServiceProtocol
 from src.application.protocols.temp_service_protocol import TempServiceProtocol
 from src.application.services.cache_manager import CacheManager
@@ -6,6 +8,8 @@ from src.application.protocols.storage_service_protocol import StorageServicePro
 from src.application.protocols.url_validator_protocol import URLValidatorProtocol
 from src.application.dto.request.download_request import DownloadRequest
 from src.application.dto.output.download_output import DownloadOutput
+from src.application.models.cached_item import CachedItem
+from src.application.models.cache_key import CacheKey
 from src.domain.exceptions import (
     DownloadFailed,
     BlacklistException,
@@ -31,108 +35,55 @@ class DownloadUsecase():
         self.logger.info("DownloadUsecase initialized")
 
     async def execute(self, request: DownloadRequest) -> DownloadOutput:
-        self.logger.info(f"Starting download execution for URL: {request.url}")
-        self.logger.debug(
-            f"File size limit: {request.file_size_limit} bytes "
-            f"({request.file_size_limit / 1024 / 1024:.2f} MB)"
+        self._validate_request(request)
+        
+        cache_key = CacheKey(
+            url=request.url,
+            format_value=request.format,
+            quality=request.quality,
         )
 
-        self.logger.debug("Checking URL validity...")
-        if not self.url_validator.is_valid(request.url):
-            self.logger.warning(f"Invalid URL provided: {request.url}")
-            raise UrlException(f"Invalid URL: {request.url}")
-
-        if request.url in self.blacklist_sites:
-            self.logger.warning(f"URL is blacklisted: {request.url}")
-            raise BlacklistException(f"URL is blacklisted: {request.url}")
-        
-        self.logger.debug("Checking cache for existing download...")
-        cached_item = self.cache_manager.get(request.url)
-
+        cached_item = self.cache_manager.get_item(cache_key)
         if cached_item:
-            self.logger.info(f"Cache HIT for URL: {request.url}")
-
-            if cached_item.remote_url:
-                self.logger.debug(f"Returning cached remote URL: {cached_item.remote_url}")
-                return DownloadOutput(
-                    file_path=None,
-                    file_url=cached_item.remote_url,
-                    file_size=cached_item.file_size,
-                )
-
-            if cached_item.local_path and cached_item.local_path.exists():
-                self.logger.debug(f"Returning cached local file: {cached_item.local_path}")
-                return DownloadOutput(
-                    file_path=cached_item.local_path,
-                    file_url=None,
-                    file_size=cached_item.file_size or cached_item.local_path.stat().st_size,
-                )
-
-            self.logger.warning(
-                f"Cached local file not found at path: {cached_item.local_path}. Proceeding to re-download."
-            )
+            output = self._handle_cache_hit(cached_item)
+            if output: return output
 
         async with self.temp_service.create_session() as temp_folder:
-            self.logger.debug(f"Created temporary session at: {temp_folder}")
-
             try:
-                self.logger.info(f"Initiating download from: {request.url}")
-                downloaded_file_path = await self.download_service.download(request.url, request.format, temp_folder)
-                self.logger.info(f"Download completed: {downloaded_file_path.name}")
-
-            except Exception as error:
-                self.logger.error(f"Download failed for URL: {request.url} - {error}", exc_info=True)
-                raise DownloadFailed(f"Failed to download from {request.url}") from error
-
-            file_size = downloaded_file_path.stat().st_size
-            self.logger.debug(
-                f"Downloaded file size: {file_size} bytes ({file_size / 1024 / 1024:.2f} MB)"
-            )
-
-            if file_size > request.file_size_limit:
-                self.logger.info(
-                    f"File size ({file_size / 1024 / 1024:.2f} MB) exceeds limit "
-                    f"({request.file_size_limit / 1024 / 1024:.2f} MB) - uploading to remote storage"
+                downloaded_path = await self.download_service.download(
+                    request.url, request.format, temp_folder
                 )
+                file_size = downloaded_path.stat().st_size
 
-                try:
-                    self.logger.debug("Uploading file to remote storage...")
-                    final_url = await self.storage_service.upload(downloaded_file_path)
-                    self.logger.info(f"File uploaded successfully to: {final_url}")
+                if file_size > request.file_size_limit:
+                    return await self._handle_remote_storage(cache_key, downloaded_path, file_size)
+                
+                return self._handle_local_storage(cache_key, downloaded_path)
 
-                    self.logger.debug("Registering remote URL in cache for future requests")
+            except Exception as e:
+                self.logger.error(f"Execution failed: {e}")
+                raise DownloadFailed(f"Failed to process download: {e}")
 
-                    cached_item = self.cache_manager.register_remote(
-                        key=request.url,
-                        remote_url=final_url,
-                        file_size=file_size,
-                    )
+    def _validate_request(self, request: DownloadRequest):
+        if not self.url_validator.is_valid(request.url):
+            raise UrlException(f"Invalid URL: {request.url}")
+        if request.url in self.blacklist_sites:
+            raise BlacklistException("URL is blacklisted")
 
-                    return DownloadOutput(
-                        file_path=None,
-                        file_url=cached_item.remote_url,
-                        file_size=cached_item.file_size,
-                    )
-                except Exception as error:
-                    self.logger.error(f"Storage upload failed: {error}", exc_info=True)
-                    raise StorageError(f"Failed to upload file to storage") from error
+    def _handle_cache_hit(self, item: CachedItem) -> Optional[DownloadOutput]:
+        if item.remote_url:
+            return DownloadOutput(file_path=None, file_url=item.remote_url, file_size=item.file_size)
+        
+        if item.local_path and item.local_path.exists():
+            return DownloadOutput(file_path=item.local_path, file_url=None, file_size=item.file_size)
+        
+        return None
 
-            else:
-                self.logger.info(
-                    f"File size ({file_size / 1024 / 1024:.2f} MB) within limit "
-                    f"({request.file_size_limit / 1024 / 1024:.2f} MB) - saving locally"
-                )
-                self.logger.debug("Asking CacheManager to persist the file from temp to .cache...")
+    async def _handle_remote_storage(self, key: CacheKey, path: Path, size: int) -> DownloadOutput:
+        final_url = await self.storage_service.upload(path)
+        cached = self.cache_manager.store_item(key=key, source_file=None, remote_url=final_url)
+        return DownloadOutput(file_path=None, file_url=cached.remote_url, file_size=size)
 
-                cached_item = self.cache_manager.store(
-                    key=request.url,
-                    source_path=downloaded_file_path,
-                    file_size=file_size,
-                )
-
-                self.logger.info(f"File saved to persistent storage (.cache): {cached_item.local_path}")
-                return DownloadOutput(
-                    file_path=cached_item.local_path,
-                    file_url=None,
-                    file_size=cached_item.file_size,
-                )
+    def _handle_local_storage(self, key: CacheKey, path: Path) -> DownloadOutput:
+        cached = self.cache_manager.store_item(key=key, source_file=path, remote_url=None)
+        return DownloadOutput(file_path=cached.local_path, file_url=None, file_size=cached.file_size)

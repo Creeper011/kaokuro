@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
+from src.application.models.cache_key import CacheKey
 
 @dataclass
 class CachedItem():
+    key: CacheKey
     local_path: Path | None = None
     remote_url: str | None = None
     file_size: int | None = None
