@@ -8,6 +8,7 @@ from typing import Any, Dict
 from src.core.constants import DEFAULT_YT_DLP_SETTINGS
 from src.infrastructure.services.ytdlp import YtdlpFormatMapper
 from src.domain.enum.formats import Formats
+from src.domain.models import DownloadedFile
 
 class YtdlpDownloadService():
     """Service for downloading files using yt-dlp."""
@@ -51,7 +52,7 @@ class YtdlpDownloadService():
         """
         ...
 
-    async def download(self, url: str, format_value: Formats | None, output_folder: Path) -> Path:
+    async def download(self, url: str, format_value: Formats | None, output_folder: Path) -> DownloadedFile:
         """
         Download file from URL using yt-dlp.
         
@@ -69,7 +70,7 @@ class YtdlpDownloadService():
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._download_sync, url, format_value, output_folder)
     
-    def _download_sync(self, url: str, format_value: Formats | None, output_folder: Path) -> Path:
+    def _download_sync(self, url: str, format_value: Formats | None, output_folder: Path) -> DownloadedFile:
         self.logger.info(f"Starting download from: {url}")
         
         if not output_folder.exists():
@@ -91,14 +92,16 @@ class YtdlpDownloadService():
                     if filename:
                         file_path = Path(filename)
                         if file_path.exists():
+                            file_size = file_path.stat().st_size
                             self.logger.info(f"Successfully downloaded file to: {file_path}")
-                            return file_path
+                            return DownloadedFile(file_path=file_path, file_size=file_size)
                 
                 if not file_path.exists():
                     raise FileNotFoundError(f"Downloaded file not found at: {file_path}")
                 
+                file_size = file_path.stat().st_size
                 self.logger.info(f"Successfully downloaded file to: {file_path}")
-                return file_path
+                return DownloadedFile(file_path=file_path, file_size=file_size)
                 
         except yt_dlp.DownloadError as error:
             self.logger.error(f"yt-dlp download error: {error}", exc_info=True)

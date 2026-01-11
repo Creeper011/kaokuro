@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from src.application.models.cache_key import CacheKey
+from src.application.models.dataclasses import CacheKey
 
 @dataclass
 class CachedItem():

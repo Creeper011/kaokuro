@@ -3,19 +3,20 @@ from pathlib import Path
 from typing import Optional
 from src.application.protocols.download_service_protocol import DownloadServiceProtocol
 from src.application.protocols.temp_service_protocol import TempServiceProtocol
-from src.infrastructure.services.cache.cache_manager import CacheManager
+from src.application.services import CacheManager
 from src.application.protocols.remote_storage_service_protocol import RemoteStorageServiceProtocol
 from src.application.protocols.url_validator_protocol import URLValidatorProtocol
 from src.application.dto.request.download_request import DownloadRequest
 from src.application.dto.output.download_output import DownloadOutput
-from src.application.models.cached_item import CachedItem
-from src.application.models.cache_key import CacheKey
+from src.application.models.dataclasses.cached_item import CachedItem
+from src.application.models.dataclasses.cache_key import CacheKey
 from src.domain.exceptions import (
     DownloadFailed,
     BlacklistException,
     UrlException,
     StorageError,
 )
+from src.domain.models import DownloadedFile
 
 
 class DownloadUsecase():
@@ -46,16 +47,15 @@ class DownloadUsecase():
 
         async with self.temp_service.create_session() as temp_folder:
             try:
-                downloaded_path = await self.download_service.download(
+                downloaded_file: DownloadedFile = await self.download_service.download(
                     request.url, request.format, temp_folder
                 )
-                file_size = downloaded_path.stat().st_size
 
-                if file_size > request.file_size_limit:
-                    self.logger.debug(f"File size exceeds limit {file_size} (limit: {request.file_size_limit}), uploading to remote storage")
-                    return await self._handle_remote_storage(cache_key, downloaded_path, file_size)
+                if downloaded_file.file_size > request.file_size_limit:
+                    self.logger.debug(f"File size exceeds limit {downloaded_file.file_size} (limit: {request.file_size_limit}), uploading to remote storage")
+                    return await self._handle_remote_storage(cache_key, downloaded_file.file_path, downloaded_file.file_size)
                 
-                return self._handle_local_storage(cache_key, downloaded_path)
+                return self._handle_local_storage(cache_key, downloaded_file.file_path)
 
             except Exception as e:
                 self.logger.error(f"Execution failed: {e}")
@@ -86,7 +86,7 @@ class DownloadUsecase():
         if item.remote_url:
             return DownloadOutput(file_path=None, file_url=item.remote_url, file_size=item.file_size)
         
-        if item.local_path and item.local_path.exists():
+        if item.local_path:
             return DownloadOutput(file_path=item.local_path, file_url=None, file_size=item.file_size)
         
         return None

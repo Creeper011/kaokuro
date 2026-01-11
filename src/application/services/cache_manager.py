@@ -2,9 +2,9 @@ import logging
 from typing import Dict, Optional, overload, Any
 from pathlib import Path
 from logging import Logger
-from src.application.models.cached_item import CachedItem
+from src.application.models.dataclasses.cached_item import CachedItem
 from src.application.protocols.cache_storage_protocol import CacheStorageProtocol
-from src.application.models.cache_key import CacheKey
+from src.application.models.dataclasses.cache_key import CacheKey
 from src.domain.models.result import Result
 from src.domain.enum.formats import Formats
 from src.domain.enum.quality import Quality
