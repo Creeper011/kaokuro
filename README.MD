@@ -17,6 +17,9 @@ Kaoruko is a lovable Discord bot built with discord.py (Python) featuring a modu
 - Python 3.12.5+
 - Make
 
+**Documentation:**
+- The documentation for Kaoruko can be found in ./docs folder (WIP).
+
 **Installation:**
 1. Clone the repository
 2. Navigate to the project directory
@@ -28,6 +31,7 @@ Kaoruko is a lovable Discord bot built with discord.py (Python) featuring a modu
 git clone https://github.com/Creeper011/kaoruko
 cd kaoruko
 make venv
+source .venv/bin/activate  # On Windows use `.venv\Scripts\activate`
 make install
 make run
 ```
@@ -36,6 +40,13 @@ make run
 ```bash
 pyenv install 3.12.5
 pyenv local 3.12.5  # in project folder
+```
+
+**Docker (optional):**
+- You can also run Kaoruko using Docker. Make sure you have Docker installed and run the following command:
+```bash
+docker build -t kaoruko .
+docker run -d --name kaoruko -e TOKEN=your_discord_bot_token -p 8080:8080 kaoruko
 ```
 
 Made with fear and love by Creeper011
